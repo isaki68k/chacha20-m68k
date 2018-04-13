@@ -58,10 +58,10 @@ crypto_core:
 |  Out: DST0-DST3 (%a0-%a3)
 |  Use: %d0-%d3
 #define QUARTERROUND(DST0, DST1, DST2, DST3) \
-	movel	(DST0 * 4)(%a5),%d0; \
-	movel	(DST1 * 4)(%a5),%d1; \
-	movel	(DST2 * 4)(%a5),%d2; \
-	movel	(DST3 * 4)(%a5),%d3; \
+	movel	(%a0),%d0; \
+	movel	(%a1),%d1; \
+	movel	(%a2),%d2; \
+	movel	(%a3),%d3; \
 	addl	%d1,%d0; \
 	eorl	%d0,%d3; \
 	swap	%d3; \
@@ -74,10 +74,10 @@ crypto_core:
 	addl	%d3,%d2; \
 	eorl	%d2,%d1; \
 	roll	#7,%d1; \
-	movel	%d0,(DST0 * 4)(%a5); \
-	movel	%d1,(DST1 * 4)(%a5); \
-	movel	%d2,(DST2 * 4)(%a5); \
-	movel	%d3,(DST3 * 4)(%a5)
+	movel	%d0,DST0; \
+	movel	%d1,DST1; \
+	movel	%d2,DST2; \
+	movel	%d3,DST3
 
 	| QUARTERROUND( x0, x4, x8,x12);
 	| QUARTERROUND( x1, x5, x9,x13);
@@ -92,21 +92,29 @@ crypto_core:
 	moveql	#(ROUNDS / 2 -1),%d5	| loop count
 
 	leal	-128(%fp),%a5	| %a5 := x
+	| %a1 はループの最後と最初が同じになるので2回目以降は初期化不要
+	leal	16(%a5),%a1	| %a1 := x4
 _loop:
-	QUARTERROUND(0, 4, 8,12)
-	QUARTERROUND(1, 5, 9,13)
-	QUARTERROUND(2, 6,10,14)
-	QUARTERROUND(3, 7,11,15)
+	leal	(%a5),%a0	| %a0 := x0
+	leal	32(%a5),%a2	| %a2 := x8
+	leal	48(%a5),%a3	| %a3 := x12
 
-	QUARTERROUND(0, 5,10,15)
-	QUARTERROUND(1, 6,11,12)
-	QUARTERROUND(2, 7, 8,13)
-	QUARTERROUND(3, 4, 9,14)
+	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
+	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x1, x5, x9,x13
+	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x2, x6,x10,x14
+	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x7,x11,x15
+	leal	(%a5),%a0
+	subq	#8,%a1
+	subq	#4,%a2
+	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3) )	| x0, x5,x10,x15
+	leal	48(%a5),%a3
+	QUARTERROUND((%a0)+, (%a1)+, (%a2),  (%a3)+)	| x1, x6,x11,x12
+	leal	32(%a5),%a2
+	QUARTERROUND((%a0)+, (%a1),  (%a2)+, (%a3)+)	| x2, x7, x8,x13
+	leal	16(%a5),%a1
+	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x4, x9,x14
 
 	dbra	%d5,_loop
-
-	leal	-64(%fp),%a4	| %a4 := j
-	leal	-128(%fp),%a5	| %a5 := x
 
 	| %a4 := j
 	| %a5 := x
