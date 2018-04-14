@@ -99,9 +99,11 @@ crypto_core:
 	leal	-128(%fp),%a5	| %a5 := x
 	| %a1 はループの最後と最初が同じになるので2回目以降は初期化不要
 	leal	16(%a5),%a1	| %a1 := x4
+	| %a2 はループ内では sub で調整したほうが速い
+	leal	36(%a5),%a2	| %a2 := x9
 _loop:
 	leal	(%a5),%a0	| %a0 := x0
-	leal	32(%a5),%a2	| %a2 := x8
+	subq	#4,%a2		| %a2 := x8
 	leal	48(%a5),%a3	| %a3 := x12
 
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
