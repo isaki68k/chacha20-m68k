@@ -126,33 +126,13 @@ _loop:
 	| %a4 := j
 	| %a5 := x
 	moveal	8(%fp),%a0	| %a0 := out
-
-| Add SRC1 and SRC2 and store to DST.
-|  Use: %d0
-#define ADDTOLE(SRC1,SRC2,DST) \
-	movel	SRC1,%d0; \
-	addl	SRC2,%d0; \
-	rorw	#8,%d0; \
-	swap	%d0; \
-	rorw	#8,%d0; \
-	movel	%d0,DST
-
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 0
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 1
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 2
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 3
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 4
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 5
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 6
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 7
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 8
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 9
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 10
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 11
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 12
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 13
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 14
-	ADDTOLE((%a4) , (%a5) , (%a0) )	| 15
+	moveql	#16-1,%d1
+1:
+	movel	(%a4)+,%d0
+	addl	(%a5)+,%d0	| j[i] + x[i]
+	BSWAP32	%d0
+	movel	%d0,(%a0)+	| -> out[i]
+	dbra	%d1, 1b
 
 	moveml	(%sp)+,%d2-%d5/%a2-%a5
 	unlk	%fp
