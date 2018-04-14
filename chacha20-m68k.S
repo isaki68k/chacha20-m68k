@@ -103,7 +103,7 @@ crypto_core:
 	leal	36(%a5),%a2	| %a2 := x9
 	| %a3 もループ内では sub で調整したほうが速い
 	lea	56(%a5),%a3	| %a3 := x14
-_loop:
+2:
 	leal	(%a5),%a0	| %a0 := x0
 	subq	#4,%a2		| %a2 := x8
 	subq	#8,%a3		| %a3 := x12
@@ -123,18 +123,19 @@ _loop:
 	leal	16(%a5),%a1
 	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x4, x9,x14
 
-	dbra	%d5,_loop
+	dbra	%d5,2b
 
+	| Store j + x -> out
 	| %a4 := j
 	| %a5 := x
 	moveal	8(%fp),%a0	| %a0 := out
 	moveql	#16-1,%d1
-1:
+3:
 	movel	(%a4)+,%d0
 	addl	(%a5)+,%d0	| j[i] + x[i]
 	BSWAP32	%d0
 	movel	%d0,(%a0)+	| -> out[i]
-	dbra	%d1, 1b
+	dbra	%d1, 3b
 
 	moveml	(%sp)+,%d2-%d5/%a2-%a5
 	unlk	%fp
