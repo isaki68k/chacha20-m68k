@@ -14,18 +14,16 @@
 	.global crypto_core
 	.type	crypto_core, @function
 crypto_core:
-	linkw	%fp,#-128
-	moveml	%d2-%d5/%a2-%a5,-(%sp)
-	moveal	12(%fp),%a0	| %a0 := in
-	moveal	16(%fp),%a1	| %a1 := k
-	moveal	20(%fp),%a3	| %a3 := c
+	linkw	%fp,#-64
+	moveml	%d2-%d5/%a2-%a4,-(%sp)
 
-	leal	-128(%fp),%a4	| %a4 := x
-	leal	-64(%fp),%a5	| %a5 := j
+	leal	-64(%fp),%a4	| %a4 := x
+	moveal	8(%fp),%a2	| %a2 := out
 
 | Load from SRC and bswap it and then store it to x, j.
 |  Inp: SRC
-|  Out: %a4++, %a5++
+|  Out: %a4++: x[0..15]
+|       %a2++: j[0..15] as out[0..15]
 |  Use: %d0
 #define LETOBE(SRC)	\
 	movel	SRC,%d0; \
@@ -33,20 +31,25 @@ crypto_core:
 	swap	%d0; \
 	rorw	#8,%d0; \
 	movel	%d0,(%a4)+; \
-	movel	%d0,(%a5)+
+	movel	%d0,(%a2)+
 
-	LETOBE((%a3)+)	| j0 : c +0
-	LETOBE((%a3)+)	| j1 : c +4
-	LETOBE((%a3)+)	| j2 : c +8
-	LETOBE((%a3) )	| j3 : c +12
-	LETOBE((%a1)+)	| j4 : k +0
-	LETOBE((%a1)+)	| j5 : k +4
-	LETOBE((%a1)+)	| j6 : k +8
-	LETOBE((%a1)+)	| j7 : k +12
-	LETOBE((%a1)+)	| j8 : k +16
-	LETOBE((%a1)+)	| j9 : k +20
-	LETOBE((%a1)+)	| j10: k +24
-	LETOBE((%a1) )	| j11: k +28
+	moveal	20(%fp),%a0	| %a0 := c
+	LETOBE((%a0)+)	| j0 : c +0
+	LETOBE((%a0)+)	| j1 : c +4
+	LETOBE((%a0)+)	| j2 : c +8
+	LETOBE((%a0) )	| j3 : c +12
+
+	moveal	16(%fp),%a0	| %a0 := k
+	LETOBE((%a0)+)	| j4 : k +0
+	LETOBE((%a0)+)	| j5 : k +4
+	LETOBE((%a0)+)	| j6 : k +8
+	LETOBE((%a0)+)	| j7 : k +12
+	LETOBE((%a0)+)	| j8 : k +16
+	LETOBE((%a0)+)	| j9 : k +20
+	LETOBE((%a0)+)	| j10: k +24
+	LETOBE((%a0) )	| j11: k +28
+
+	moveal	12(%fp),%a0	| %a0 := in
 	LETOBE((%a0)+)	| j12: in +0
 	LETOBE((%a0)+)	| j13: in +4
 	LETOBE((%a0)+)	| j14: in +8
@@ -91,63 +94,62 @@ crypto_core:
 	moveql	#12,%d4		| shift count
 	moveql	#(ROUNDS / 2 -1),%d5	| loop count
 
-	leal	-128(%fp),%a5	| %a5 := x
+	leal	-64(%fp),%a4	| %a4 := x
 	| %a1 はループの最後と最初が同じになるので2回目以降は初期化不要
-	leal	16(%a5),%a1	| %a1 := x4
+	leal	16(%a4),%a1	| %a1 := x4
 _loop:
-	leal	(%a5),%a0	| %a0 := x0
-	leal	32(%a5),%a2	| %a2 := x8
-	leal	48(%a5),%a3	| %a3 := x12
+	leal	(%a4),%a0	| %a0 := x0
+	leal	32(%a4),%a2	| %a2 := x8
+	leal	48(%a4),%a3	| %a3 := x12
 
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x1, x5, x9,x13
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x2, x6,x10,x14
 	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x7,x11,x15
-	leal	(%a5),%a0
+	leal	(%a4),%a0
 	subq	#8,%a1
 	subq	#4,%a2
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3) )	| x0, x5,x10,x15
-	leal	48(%a5),%a3
+	leal	48(%a4),%a3
 	QUARTERROUND((%a0)+, (%a1)+, (%a2),  (%a3)+)	| x1, x6,x11,x12
-	leal	32(%a5),%a2
+	leal	32(%a4),%a2
 	QUARTERROUND((%a0)+, (%a1),  (%a2)+, (%a3)+)	| x2, x7, x8,x13
-	leal	16(%a5),%a1
+	leal	16(%a4),%a1
 	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x4, x9,x14
 
 	dbra	%d5,_loop
 
-	| %a4 := j
-	| %a5 := x
+	| %a4 := x
 	moveal	8(%fp),%a0	| %a0 := out
 
-| Add SRC1 and SRC2 and store to DST.
+| Add SRC1 and DST and store to DST.
 |  Use: %d0
-#define ADDTOLE(SRC1,SRC2,DST) \
-	movel	SRC1,%d0; \
-	addl	SRC2,%d0; \
+#define ADDTOLE(SRC,DST) \
+	movel	SRC,%d0; \
+	addl	(%a0),%d0; \
 	rorw	#8,%d0; \
 	swap	%d0; \
 	rorw	#8,%d0; \
 	movel	%d0,DST
 
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 0
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 1
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 2
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 3
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 4
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 5
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 6
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 7
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 8
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 9
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 10
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 11
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 12
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 13
-	ADDTOLE((%a4)+, (%a5)+, (%a0)+)	| 14
-	ADDTOLE((%a4) , (%a5) , (%a0) )	| 15
+	ADDTOLE((%a4)+, (%a0)+)	| 0
+	ADDTOLE((%a4)+, (%a0)+)	| 1
+	ADDTOLE((%a4)+, (%a0)+)	| 2
+	ADDTOLE((%a4)+, (%a0)+)	| 3
+	ADDTOLE((%a4)+, (%a0)+)	| 4
+	ADDTOLE((%a4)+, (%a0)+)	| 5
+	ADDTOLE((%a4)+, (%a0)+)	| 6
+	ADDTOLE((%a4)+, (%a0)+)	| 7
+	ADDTOLE((%a4)+, (%a0)+)	| 8
+	ADDTOLE((%a4)+, (%a0)+)	| 9
+	ADDTOLE((%a4)+, (%a0)+)	| 10
+	ADDTOLE((%a4)+, (%a0)+)	| 11
+	ADDTOLE((%a4)+, (%a0)+)	| 12
+	ADDTOLE((%a4)+, (%a0)+)	| 13
+	ADDTOLE((%a4)+, (%a0)+)	| 14
+	ADDTOLE((%a4) , (%a0) )	| 15
 
-	moveml	(%sp)+,%d2-%d5/%a2-%a5
+	moveml	(%sp)+,%d2-%d5/%a2-%a4
 	unlk	%fp
 	rts
 	.size	crypto_core, .-crypto_core
