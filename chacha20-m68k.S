@@ -21,24 +21,25 @@
 	.global crypto_core
 	.type	crypto_core, @function
 crypto_core:
-	linkw	%fp,#-128
-	moveml	%d2-%d5/%a2-%a5,-(%sp)
+	linkw	%fp,#-64
+	moveml	%d2-%d5/%a2-%a4,-(%sp)
 	moveal	12(%fp),%a1	| %a1 := in
 	moveal	16(%fp),%a2	| %a2 := k
 	moveal	20(%fp),%a3	| %a3 := c
 
-	leal	-128(%fp),%a4	| %a4 := x
-	leal	-64(%fp),%a5	| %a5 := j
+	leal	-64(%fp),%a4	| %a4 := x
+	moveal	8(%fp),%a0	| %a0 := j as out
 
 | Load from SRC and bswap it and then store it to x, j.
 |  Inp: SRC
-|  Out: %a4++, %a5++
+|  Out: %a0++: j[] as out
+|       %a4++: x[]
 |  Use: %d0
 #define LOAD_LE(SRC)	\
 	movel	SRC,%d0; \
 	BSWAP32	%d0; \
-	movel	%d0,(%a4)+; \
-	movel	%d0,(%a5)+
+	movel	%d0,(%a0)+; \
+	movel	%d0,(%a4)+
 
 	LOAD_LE((%a3)+)	| j0 : c +0
 	LOAD_LE((%a3)+)	| j1 : c +4
@@ -96,43 +97,42 @@ crypto_core:
 	moveql	#12,%d4		| shift count
 	moveql	#(ROUNDS / 2 -1),%d5	| loop count
 
-	leal	-128(%fp),%a5	| %a5 := x
+	leal	-64(%fp),%a4	| %a4 := x
 	| %a1 はループの最後と最初が同じになるので2回目以降は初期化不要
-	leal	16(%a5),%a1	| %a1 := x4
+	leal	16(%a4),%a1	| %a1 := x4
 _loop:
-	leal	(%a5),%a0	| %a0 := x0
-	leal	32(%a5),%a2	| %a2 := x8
-	leal	48(%a5),%a3	| %a3 := x12
+	leal	(%a4),%a0	| %a0 := x0
+	leal	32(%a4),%a2	| %a2 := x8
+	leal	48(%a4),%a3	| %a3 := x12
 
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x1, x5, x9,x13
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x2, x6,x10,x14
 	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x7,x11,x15
-	leal	(%a5),%a0
+	leal	(%a4),%a0
 	subq	#8,%a1
 	subq	#4,%a2
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3) )	| x0, x5,x10,x15
-	leal	48(%a5),%a3
+	leal	48(%a4),%a3
 	QUARTERROUND((%a0)+, (%a1)+, (%a2),  (%a3)+)	| x1, x6,x11,x12
-	leal	32(%a5),%a2
+	leal	32(%a4),%a2
 	QUARTERROUND((%a0)+, (%a1),  (%a2)+, (%a3)+)	| x2, x7, x8,x13
-	leal	16(%a5),%a1
+	leal	16(%a4),%a1
 	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x4, x9,x14
 
 	dbra	%d5,_loop
 
-	| %a4 := j
-	| %a5 := x
 	moveal	8(%fp),%a0	| %a0 := out
+	leal	-64(%fp),%a4	| %a4 := j
 	moveql	#16-1,%d1
 1:
-	movel	(%a4)+,%d0
-	addl	(%a5)+,%d0	| j[i] + x[i]
+	movel	(%a0),%d0
+	addl	(%a4)+,%d0	| j[i] + x[i]
 	BSWAP32	%d0
 	movel	%d0,(%a0)+	| -> out[i]
 	dbra	%d1, 1b
 
-	moveml	(%sp)+,%d2-%d5/%a2-%a5
+	moveml	(%sp)+,%d2-%d5/%a2-%a4
 	unlk	%fp
 	rts
 	.size	crypto_core, .-crypto_core
