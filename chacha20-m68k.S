@@ -23,8 +23,8 @@
 crypto_core:
 	linkw	%fp,#-128
 	moveml	%d2-%d5/%a2-%a5,-(%sp)
-	moveal	12(%fp),%a0	| %a0 := in
-	moveal	16(%fp),%a1	| %a1 := k
+	moveal	12(%fp),%a1	| %a1 := in
+	moveal	16(%fp),%a2	| %a2 := k
 	moveal	20(%fp),%a3	| %a3 := c
 
 	leal	-128(%fp),%a4	| %a4 := x
@@ -44,18 +44,18 @@ crypto_core:
 	LETOBE((%a3)+)	| j1 : c +4
 	LETOBE((%a3)+)	| j2 : c +8
 	LETOBE((%a3) )	| j3 : c +12
-	LETOBE((%a1)+)	| j4 : k +0
-	LETOBE((%a1)+)	| j5 : k +4
-	LETOBE((%a1)+)	| j6 : k +8
-	LETOBE((%a1)+)	| j7 : k +12
-	LETOBE((%a1)+)	| j8 : k +16
-	LETOBE((%a1)+)	| j9 : k +20
-	LETOBE((%a1)+)	| j10: k +24
-	LETOBE((%a1) )	| j11: k +28
-	LETOBE((%a0)+)	| j12: in +0
-	LETOBE((%a0)+)	| j13: in +4
-	LETOBE((%a0)+)	| j14: in +8
-	LETOBE((%a0) )	| j15: in +12
+	LETOBE((%a2)+)	| j4 : k +0
+	LETOBE((%a2)+)	| j5 : k +4
+	LETOBE((%a2)+)	| j6 : k +8
+	LETOBE((%a2)+)	| j7 : k +12
+	LETOBE((%a2)+)	| j8 : k +16
+	LETOBE((%a2)+)	| j9 : k +20
+	LETOBE((%a2)+)	| j10: k +24
+	LETOBE((%a2) )	| j11: k +28
+	LETOBE((%a1)+)	| j12: in +0
+	LETOBE((%a1)+)	| j13: in +4
+	LETOBE((%a1)+)	| j14: in +8
+	LETOBE((%a1) )	| j15: in +12
 
 | Do QuarterRound.
 |  Inp: %a0-%a3: source
