@@ -101,10 +101,12 @@ crypto_core:
 	leal	16(%a5),%a1	| %a1 := x4
 	| %a2 はループ内では sub で調整したほうが速い
 	leal	36(%a5),%a2	| %a2 := x9
+	| %a3 もループ内では sub で調整したほうが速い
+	lea	56(%a5),%a3	| %a3 := x14
 _loop:
 	leal	(%a5),%a0	| %a0 := x0
 	subq	#4,%a2		| %a2 := x8
-	leal	48(%a5),%a3	| %a3 := x12
+	subq	#8,%a3		| %a3 := x12
 
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x1, x5, x9,x13
