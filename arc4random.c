@@ -278,7 +278,7 @@ perf(void)
 	gettimeofday(&end, NULL);
 	timersub(&end, &start, &result);
 
-	printf("%5.1f loop/sec (16byte)\n", 
+	printf("%5.1f loop/sec\n",
 		(double)i / ((double)result.tv_sec + (double)result.tv_usec/1000000));
 	return 0;
 }
