@@ -34,28 +34,28 @@ crypto_core:
 |  Inp: SRC
 |  Out: %a4++, %a5++
 |  Use: %d0
-#define LETOBE(SRC)	\
+#define LOAD_LE(SRC)	\
 	movel	SRC,%d0; \
 	BSWAP32	%d0; \
 	movel	%d0,(%a4)+; \
 	movel	%d0,(%a5)+
 
-	LETOBE((%a3)+)	| j0 : c +0
-	LETOBE((%a3)+)	| j1 : c +4
-	LETOBE((%a3)+)	| j2 : c +8
-	LETOBE((%a3) )	| j3 : c +12
-	LETOBE((%a2)+)	| j4 : k +0
-	LETOBE((%a2)+)	| j5 : k +4
-	LETOBE((%a2)+)	| j6 : k +8
-	LETOBE((%a2)+)	| j7 : k +12
-	LETOBE((%a2)+)	| j8 : k +16
-	LETOBE((%a2)+)	| j9 : k +20
-	LETOBE((%a2)+)	| j10: k +24
-	LETOBE((%a2) )	| j11: k +28
-	LETOBE((%a1)+)	| j12: in +0
-	LETOBE((%a1)+)	| j13: in +4
-	LETOBE((%a1)+)	| j14: in +8
-	LETOBE((%a1) )	| j15: in +12
+	LOAD_LE((%a3)+)	| j0 : c +0
+	LOAD_LE((%a3)+)	| j1 : c +4
+	LOAD_LE((%a3)+)	| j2 : c +8
+	LOAD_LE((%a3) )	| j3 : c +12
+	LOAD_LE((%a2)+)	| j4 : k +0
+	LOAD_LE((%a2)+)	| j5 : k +4
+	LOAD_LE((%a2)+)	| j6 : k +8
+	LOAD_LE((%a2)+)	| j7 : k +12
+	LOAD_LE((%a2)+)	| j8 : k +16
+	LOAD_LE((%a2)+)	| j9 : k +20
+	LOAD_LE((%a2)+)	| j10: k +24
+	LOAD_LE((%a2) )	| j11: k +28
+	LOAD_LE((%a1)+)	| j12: in +0
+	LOAD_LE((%a1)+)	| j13: in +4
+	LOAD_LE((%a1)+)	| j14: in +8
+	LOAD_LE((%a1) )	| j15: in +12
 
 | Do QuarterRound.
 |  Inp: %a0-%a3: source
