@@ -36,9 +36,7 @@ crypto_core:
 |  Use: %d0
 #define LETOBE(SRC)	\
 	movel	SRC,%d0; \
-	rorw	#8,%d0; \
-	swap	%d0; \
-	rorw	#8,%d0; \
+	BSWAP32	%d0; \
 	movel	%d0,(%a4)+; \
 	movel	%d0,(%a5)+
 
