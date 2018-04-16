@@ -158,6 +158,7 @@ crypto_core:
 	| %a4 := j
 	| %a5 := x
 	moveal	8(%fp),%a0	| %a0 := out
+#if 0
 	moveql	#16-1,%d1
 3:
 	movel	(%a4)+,%d0
@@ -165,6 +166,23 @@ crypto_core:
 	BSWAP32	%d0
 	movel	%d0,(%a0)+	| -> out[i]
 	dbra	%d1, 3b
+#else
+	moveql	#8-1,%d2
+3:
+	movel	(%a4)+,%d0
+	addl	(%a5)+,%d0	| j[i] + x[i]
+	rorw	#8,%d0
+	movel	(%a4)+,%d1
+	swap	%d0
+	addl	(%a5)+,%d1	| j[i+1] + x[i+1]
+	rorw	#8,%d0
+	movel	%d0,(%a0)+	| -> out[i]
+	rorw	#8,%d1
+	swap	%d1
+	rorw	#8,%d1
+	movel	%d1,(%a0)+	| -> out[i+1]
+	dbra	%d2,3b
+#endif
 
 	moveml	(%sp)+,%d2-%d5/%a2-%a5
 	unlk	%fp
