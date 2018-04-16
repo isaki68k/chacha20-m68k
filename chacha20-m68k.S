@@ -125,23 +125,27 @@ crypto_core:
 	moveql	#12,%d4		| shift count
 	moveql	#(ROUNDS / 2 -1),%d5	| loop count
 
-	leal	-128(%fp),%a5	| %a5 := x
+	leal	(-128+12)(%fp),%a5	| %a5 := x3
 	| %a1 はループの最後と最初が同じになるので2回目以降は初期化不要
-	leal	16(%a5),%a1	| %a1 := x4
+	leal	(16-12)(%a5),%a1	| %a1 := x4
 	| %a2 はループ内では sub で調整したほうが速い
-	leal	36(%a5),%a2	| %a2 := x9
+	leal	(36-12)(%a5),%a2	| %a2 := x9
 	| %a3 もループ内では sub で調整したほうが速い
-	lea	56(%a5),%a3	| %a3 := x14
+	lea	(56-12)(%a5),%a3	| %a3 := x14
 2:
-	leal	(%a5),%a0	| %a0 := x0
+	leal	-12(%a5),%a0	| %a0 := x0
 	subq	#4,%a2		| %a2 := x8
 	subq	#8,%a3		| %a3 := x12
 
-	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
-	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x1, x5, x9,x13
-	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x2, x6,x10,x14
+|	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
+|	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x1, x5, x9,x13
+|	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x2, x6,x10,x14
+4:
+	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)
+	cmpal	%a0,%a5	| a0 == x3?
+	bne	4b
 	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x7,x11,x15
-	leal	(%a5),%a0
+	suba	%d4,%a0
 	subq	#8,%a1
 	subq	#4,%a2
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3) )	| x0, x5,x10,x15
@@ -157,6 +161,7 @@ crypto_core:
 	| Store j + x -> out
 	| %a4 := j
 	| %a5 := x
+	suba	%d4,%a5
 	moveal	8(%fp),%a0	| %a0 := out
 #if 0
 	moveql	#16-1,%d1
