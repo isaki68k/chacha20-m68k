@@ -62,22 +62,22 @@ crypto_core:
 	movel	%fp,-(%sp)
 	movel	#(ROUNDS/2),-(%sp)
 	leal	-128(%fp),%a3		| %a3 := x
-	movel	(%a3)+,%d0
-	movel	(%a3)+,%d4
-	movel	(%a3)+,%a0
-	movel	(%a3)+,%a4
-	movel	(%a3)+,%d1
-	movel	(%a3)+,%d5
-	movel	(%a3)+,%a1
-	movel	(%a3)+,%a5
-	movel	(%a3)+,%d2
-	movel	(%a3)+,%d6
-	movel	(%a3)+,%a2
-	movel	(%a3)+,%a6
-	movel	(%a3)+,%d3
-	movel	(%a3)+,%d7
-	movel	4(%a3),-(%sp)
-	movel	(%a3),%a3
+	movel	(%a3)+,%d0		| x0
+	movel	(%a3)+,%d4		| x1
+	movel	(%a3)+,%a0		| x2
+	movel	(%a3)+,%a4		| x3
+	movel	(%a3)+,%d1		| x4
+	movel	(%a3)+,%d5		| x5
+	movel	(%a3)+,%a1		| x6
+	movel	(%a3)+,%a5		| x7
+	movel	(%a3)+,%d2		| x8
+	movel	(%a3)+,%d6		| x9
+	movel	(%a3)+,%a2		| x10
+	movel	(%a3)+,%a6		| x11
+	movel	(%a3)+,%d3		| x12
+	movel	(%a3)+,%d7		| x13
+	movel	4(%a3),-(%sp)		| x15
+	movel	(%a3),%a3		| x14
 
 	| %sp+0  = x15
 	| %sp+4  = counter
@@ -305,26 +305,26 @@ loop:
 	| %sp+12 = %fp
 
 	movel	12(%sp),%a3
-	leal	-128(%a3),%a3
-	movel	%d0,(%a3)+
-	movel	%d4,(%a3)+
-	movel	%a0,(%a3)+
-	movel	%a4,(%a3)+
-	movel	%d1,(%a3)+
-	movel	%d5,(%a3)+
-	movel	%a1,(%a3)+
-	movel	%a5,(%a3)+
-	movel	%d2,(%a3)+
-	movel	%d6,(%a3)+
-	movel	%a2,(%a3)+
-	movel	%a6,(%a3)+
-	movel	%d3,(%a3)+
-	movel	%d7,(%a3)+
-	movel	(%sp)+,(%a3)+
-	movel	(%sp)+,(%a3)+
-	addql	#4,%sp
-	movel	(%sp)+,%a6
-	| %sp, %fp がいきてる
+	leal	-128(%a3),%a3		| %a3 := x
+	movel	%d0,(%a3)+		| x0
+	movel	%d4,(%a3)+		| x1
+	movel	%a0,(%a3)+		| x2
+	movel	%a4,(%a3)+		| x3
+	movel	%d1,(%a3)+		| x4
+	movel	%d5,(%a3)+		| x5
+	movel	%a1,(%a3)+		| x6
+	movel	%a5,(%a3)+		| x7
+	movel	%d2,(%a3)+		| x8
+	movel	%d6,(%a3)+		| x9
+	movel	%a2,(%a3)+		| x10
+	movel	%a6,(%a3)+		| x11
+	movel	%d3,(%a3)+		| x12
+	movel	%d7,(%a3)+		| x13
+	movel	(%sp)+,(%a3)+		| x14
+	movel	(%sp)+,(%a3)+		| x15
+	addql	#4,%sp			| discard counter
+	movel	(%sp)+,%a6		| restore %fp
+	| %sp, %fp are now restored.
 
 	| Store j + x -> out
 	leal	-64(%fp),%a4	| %a4 := j
