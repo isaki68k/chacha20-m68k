@@ -82,56 +82,35 @@ crypto_core:
 	| %sp+0  = x15
 	| %sp+4  = counter
 	| %sp+8  = %fp
-loop:
-| 0, 4, 8, 12
-	addl	%d1,%d0
-	eorl	%d0,%d3
-	swap	%d3
-	addl	%d3,%d2
-	eorl	%d2,%d1
-	swap	%d1
-	rorl	#4,%d1
-	addl	%d1,%d0
-	eorl	%d0,%d3
-	roll	#8,%d3
-	addl	%d3,%d2
-	eorl	%d2,%d1
-	roll	#7,%d1
 
-| 1, 5, 9, 13
-	addl	%d5,%d4
-	eorl	%d4,%d7
-	swap	%d7
-	addl	%d7,%d6
-	eorl	%d6,%d5
-	swap	%d5
-	rorl	#4,%d5
-	addl	%d5,%d4
-	eorl	%d4,%d7
-	roll	#8,%d7
-	addl	%d7,%d6
-	eorl	%d6,%d5
-	roll	#7,%d5
+#define QUARTERROUND(A,B,C,D)	\
+	addl	B,A; \
+	eorl	A,D; \
+	swap	D; \
+	addl	D,C; \
+	eorl	C,B; \
+	swap	B; \
+	rorl	#4,B; \
+	addl	B,A; \
+	eorl	A,D; \
+	roll	#8,D; \
+	addl	D,C; \
+	eorl	C,B; \
+	roll	#7,B
+loop:
+	| (1st) 0, 4, 8, 12
+	QUARTERROUND(%d0, %d1, %d2, %d3)
+
+	| (2nd) 1, 5, 9, 13
+	QUARTERROUND(%d4, %d5, %d6, %d7)
 
 	exg	%d0,%a0
 	exg	%d1,%a1
 	exg	%d2,%a2
 	exg	%d3,%a3
 
-| 2, 6, 10, 14
-	addl	%d1,%d0
-	eorl	%d0,%d3
-	swap	%d3
-	addl	%d3,%d2
-	eorl	%d2,%d1
-	swap	%d1
-	rorl	#4,%d1
-	addl	%d1,%d0
-	eorl	%d0,%d3
-	roll	#8,%d3
-	addl	%d3,%d2
-	eorl	%d2,%d1
-	roll	#7,%d1
+	| (3rd) 2, 6, 10, 14
+	QUARTERROUND(%d0, %d1, %d2, %d3)
 
 	exg	%d4,%a4
 	exg	%d5,%a5
@@ -139,161 +118,93 @@ loop:
 	exg	%d6,%a6
 	movel	4(%sp),%d7
 
-| 3, 7, 11, 15
-	addl	%d5,%d4
-	eorl	%d4,%d7
-	swap	%d7
-	addl	%d7,%d6
-	eorl	%d6,%d5
-	swap	%d5
-	rorl	#4,%d5
-	addl	%d5,%d4
-	eorl	%d4,%d7
-	roll	#8,%d7
-	addl	%d7,%d6
-	eorl	%d6,%d5
-	roll	#7,%d5
+	| (4th) 3, 7, 11, 15
+	QUARTERROUND(%d4, %d5, %d6, %d7)
 
-| レジスタマップ
-| 0, 4, 8, 12
-| 1, 5, 9, 13
-| 2, 6, 10, 14
-| 3, 7, 11, 15
-| a0, a1, a2, a3
-| a4, a5, a6, ()
-| d0, d1, d2, d3
-| d4, d5, d6, d7
+	| レジスタマップ
+	| 0, 4, 8, 12
+	| 1, 5, 9, 13
+	| 2, 6, 10, 14
+	| 3, 7, 11, 15
+	| a0, a1, a2, a3
+	| a4, a5, a6, ()
+	| d0, d1, d2, d3
+	| d4, d5, d6, d7
 
-| 0, 5, 10, 15
+	| (5th) 0, 5, 10, 15
 	exg	%d0,%a0
 	exg	%d5,%a5
-| レジスタマップ
-| 0, 4, 8, 12
-| 1, 5, 9, 13
-| 2, 6, 10, 14
-| 3, 7, 11, 15
-| d0, a1, a2, a3
-| a4, d5, a6, ()
-| a0, d1, d2, d3
-| d4, a5, d6, d7
+	| レジスタマップ
+	| 0, 4, 8, 12
+	| 1, 5, 9, 13
+	| 2, 6, 10, 14
+	| 3, 7, 11, 15
+	| d0, a1, a2, a3
+	| a4, d5, a6, ()
+	| a0, d1, d2, d3
+	| d4, a5, d6, d7
+	QUARTERROUND(%d0, %d5, %d2, %d7)
 
-	addl	%d5,%d0
-	eorl	%d0,%d7
-	swap	%d7
-	addl	%d7,%d2
-	eorl	%d2,%d5
-	swap	%d5
-	rorl	#4,%d5
-	addl	%d5,%d0
-	eorl	%d0,%d7
-	roll	#8,%d7
-	addl	%d7,%d2
-	eorl	%d2,%d5
-	roll	#7,%d5
-
-| 1, 6, 11, 12
+	| (6th) 1, 6, 11, 12
 	exg	%d4,%a4
 	exg	%d3,%a3
+	| レジスタマップ
+	| 0, 4, 8, 12
+	| 1, 5, 9, 13
+	| 2, 6, 10, 14
+	| 3, 7, 11, 15
+	| d0, a1, a2, d3
+	| d4, d5, a6, ()
+	| a0, d1, d2, a3
+	| a4, a5, d6, d7
+	QUARTERROUND(%d4, %d1, %d6, %d3)
 
-| レジスタマップ
-| 0, 4, 8, 12
-| 1, 5, 9, 13
-| 2, 6, 10, 14
-| 3, 7, 11, 15
-| d0, a1, a2, d3
-| d4, d5, a6, ()
-| a0, d1, d2, a3
-| a4, a5, d6, d7
-
-	addl	%d1,%d4
-	eorl	%d4,%d3
-	swap	%d3
-	addl	%d3,%d6
-	eorl	%d6,%d1
-	swap	%d1
-	rorl	#4,%d1
-	addl	%d1,%d4
-	eorl	%d4,%d3
-	roll	#8,%d3
-	addl	%d3,%d6
-	eorl	%d6,%d1
-	roll	#7,%d1
-
-| 2, 7, 8, 13
+	| (7th) 2, 7, 8, 13
 	exg	%d0,%a0
 	exg	%d5,%a5
 	movel	%d7,4(%sp)
 	exg	%d2,%a2
 	movel	(%sp)+,%d7
+	| レジスタマップ
+	| 0, 4, 8, 12
+	| 1, 5, 9, 13
+	| 2, 6, 10, 14
+	| 3, 7, 11, 15
+	| a0, a1, d2, d3
+	| d4, a5, a6, d7
+	| d0, d1, a2, a3
+	| a4, d5, d6, ()
+	QUARTERROUND(%d0, %d5, %d2, %d7)
 
-| レジスタマップ
-| 0, 4, 8, 12
-| 1, 5, 9, 13
-| 2, 6, 10, 14
-| 3, 7, 11, 15
-| a0, a1, d2, d3
-| d4, a5, a6, d7
-| d0, d1, a2, a3
-| a4, d5, d6, ()
-
-	addl	%d5,%d0
-	eorl	%d0,%d7
-	swap	%d7
-	addl	%d7,%d2
-	eorl	%d2,%d5
-	swap	%d5
-	rorl	#4,%d5
-	addl	%d5,%d0
-	eorl	%d0,%d7
-	roll	#8,%d7
-	addl	%d7,%d2
-	eorl	%d2,%d5
-	roll	#7,%d5
-
-| 3, 4, 9, 14
+	| (8th) 3, 4, 9, 14
 	exg	%d4,%a4
 	exg	%d1,%a1
 	exg	%d6,%a6
 	exg	%d3,%a3
-
-| レジスタマップ
-| 0, 4, 8, 12
-| 1, 5, 9, 13
-| 2, 6, 10, 14
-| 3, 7, 11, 15
-| a0, d1, d2, a3
-| a4, a5, d6, d7
-| d0, a1, a2, d3
-| d4, d5, a6, ()
-
-	addl	%d1,%d4
-	eorl	%d4,%d3
-	swap	%d3
-	addl	%d3,%d6
-	eorl	%d6,%d1
-	swap	%d1
-	rorl	#4,%d1
-	addl	%d1,%d4
-	eorl	%d4,%d3
-	roll	#8,%d3
-	addl	%d3,%d6
-	eorl	%d6,%d1
-	roll	#7,%d1
+	| レジスタマップ
+	| 0, 4, 8, 12
+	| 1, 5, 9, 13
+	| 2, 6, 10, 14
+	| 3, 7, 11, 15
+	| a0, d1, d2, a3
+	| a4, a5, d6, d7
+	| d0, a1, a2, d3
+	| d4, d5, a6, ()
+	QUARTERROUND(%d4, %d1, %d6, %d3)
 
 	exg	%d0,%a0
 	exg	%d3,%a3
 	exg	%d4,%a4
 	exg	%d5,%a5
-
-| レジスタマップ
-| 0, 4, 8, 12
-| 1, 5, 9, 13
-| 2, 6, 10, 14
-| 3, 7, 11, 15
-| d0, d1, d2, d3
-| d4, d5, d6, d7
-| a0, a1, a2, a3
-| a4, a5, a6, ()
+	| レジスタマップ
+	| 0, 4, 8, 12
+	| 1, 5, 9, 13
+	| 2, 6, 10, 14
+	| 3, 7, 11, 15
+	| d0, d1, d2, d3
+	| d4, d5, d6, d7
+	| a0, a1, a2, a3
+	| a4, a5, a6, ()
 
 	subql	#1,4(%sp)
 	bne	loop
