@@ -145,11 +145,11 @@ crypto_core:
 	subq	#8,%a1
 	subq	#4,%a2
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3) )	| x0, x5,x10,x15
-	leal	48(%a5),%a3
+	suba	%d4,%a3
 	QUARTERROUND((%a0)+, (%a1)+, (%a2),  (%a3)+)	| x1, x6,x11,x12
-	leal	32(%a5),%a2
+	suba	%d4,%a2
 	QUARTERROUND((%a0)+, (%a1),  (%a2)+, (%a3)+)	| x2, x7, x8,x13
-	leal	16(%a5),%a1
+	suba	%d4,%a1
 	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x4, x9,x14
 
 	dbra	%d5,2b
