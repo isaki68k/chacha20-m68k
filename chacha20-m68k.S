@@ -85,6 +85,7 @@ crypto_core:
 	LOAD_LE2((%a1)+, (%a1)+)	| j12,j13 = x12,x13 = in+0,4
 	LOAD_LE2((%a1)+, (%a1) )	| j14,j15 = x14,x15 = in+8,12
 #endif
+	| Here %a4 := j (= x16)
 
 | Do QuarterRound.
 |  Inp: %a0-%a3: source
@@ -125,14 +126,14 @@ crypto_core:
 	moveql	#12,%d4		| shift count
 	moveql	#(ROUNDS / 2 -1),%d5	| loop count
 
-	leal	(-128+16)(%fp),%a5	| %a5 := x4
-	leal	((3-4)*4)(%a5),%a0	| %a0 := x3
+	leal	-128(%fp),%a5		| %a5 := x
+	leal	(3*4)(%a5),%a0		| %a0 := x3
 	| %a1 はループの最後と最初が同じになるので2回目以降は初期化不要
-	moveal	%a5,%a1			| %a1 := x4
+	leal	(4*4)(%a5),%a1		| %a1 := x4
 	| %a2 はループ内では sub で調整したほうが速い
-	leal	((9-4)*4)(%a5),%a2	| %a2 := x9
+	leal	(9*4)(%a5),%a2		| %a2 := x9
 	| %a3 もループ内では sub で調整したほうが速い
-	lea	((14-4)*4)(%a5),%a3	| %a3 := x14
+	leal	(14*4)(%a5),%a3		| %a3 := x14
 2:
 	suba	%d4,%a0		| %a0 := x0
 	subq	#4,%a2		| %a2 := x8
@@ -144,10 +145,10 @@ crypto_core:
 |	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x3, x7,x11,x15
 4:
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)
-	cmpal	%a0,%a5	| %a0 == x4?
+	cmpal	%a3,%a4		| %a3 == x16?
 	bnes	4b
 
-	leal	((0-4)*4)(%a5),%a0
+	moveal	%a5,%a0
 	suba	%d4,%a1
 	subq	#8,%a2
 	subq	#4,%a3
@@ -164,7 +165,6 @@ crypto_core:
 	| Store j + x -> out
 	| %a4 := j
 	| %a5 := x
-	lea	-128(%fp),%a5
 	moveal	8(%fp),%a0	| %a0 := out
 #if 0
 	moveql	#16-1,%d1
