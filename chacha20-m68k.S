@@ -135,8 +135,8 @@ loop:
 
 	exg	%d4,%a4
 	exg	%d5,%a5
-	exg	%d6,%a6
 	movel	%d7,-(%sp)
+	exg	%d6,%a6
 	movel	4(%sp),%d7
 
 | 3, 7, 11, 15
@@ -222,8 +222,8 @@ loop:
 | 2, 7, 8, 13
 	exg	%d0,%a0
 	exg	%d5,%a5
-	exg	%d2,%a2
 	movel	%d7,4(%sp)
+	exg	%d2,%a2
 	movel	(%sp)+,%d7
 
 | レジスタマップ
