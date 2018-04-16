@@ -40,6 +40,25 @@ crypto_core:
 	movel	%d0,(%a4)+; \
 	movel	%d0,(%a5)+
 
+| Load SRC1,SRC2 and bswap them and store them to x, j.
+|  Inp: SRC1, SRC2
+|  Out: %a4++, %a5++
+|  Use: %d0, %d1
+#define LOAD_LE2(SRC1, SRC2)	\
+	movel	SRC1,%d0; \
+	rorw	#8,%d0; \
+	movel	SRC2,%d1; \
+	swap	%d0; \
+	rorw	#8,%d0; \
+	movel	%d0,(%a4)+; \
+	rorw	#8,%d1; \
+	movel	%d0,(%a5)+; \
+	swap	%d1; \
+	rorw	#8,%d1; \
+	movel	%d1,(%a4)+; \
+	movel	%d1,(%a5)+
+
+#if 0
 	LOAD_LE((%a3)+)	| j0 : c +0
 	LOAD_LE((%a3)+)	| j1 : c +4
 	LOAD_LE((%a3)+)	| j2 : c +8
@@ -56,6 +75,16 @@ crypto_core:
 	LOAD_LE((%a1)+)	| j13: in +4
 	LOAD_LE((%a1)+)	| j14: in +8
 	LOAD_LE((%a1) )	| j15: in +12
+#else
+	LOAD_LE2((%a3)+, (%a3)+)	| j0,j1   = x0,x1   = c+0,4
+	LOAD_LE2((%a3)+, (%a3) )	| j2,j3   = x2,x3   = c+8,12
+	LOAD_LE2((%a2)+, (%a2)+)	| j4,j5   = x4,x5   = k+0,4
+	LOAD_LE2((%a2)+, (%a2)+)	| j6,j7   = x6,x7   = k+8,12
+	LOAD_LE2((%a2)+, (%a2)+)	| j8,j9   = x8,x9   = k+16,20
+	LOAD_LE2((%a2)+, (%a2) )	| j10,j11 = x10,x11 = k+24,28
+	LOAD_LE2((%a1)+, (%a1)+)	| j12,j13 = x12,x13 = in+0,4
+	LOAD_LE2((%a1)+, (%a1) )	| j14,j15 = x14,x15 = in+8,12
+#endif
 
 | Do QuarterRound.
 |  Inp: %a0-%a3: source
