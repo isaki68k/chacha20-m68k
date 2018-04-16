@@ -5,13 +5,6 @@
 #define CONSTBYTES	16
 #define ROUNDS	20
 
-| Convert LE<->BE
-.macro	BSWAP32	reg
-	rorw	#8,\reg
-	swap	\reg
-	rorw	#8,\reg
-.endm
-
 | void
 | crypto_core(
 |  uint8_t *out,
