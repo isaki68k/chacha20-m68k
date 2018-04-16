@@ -50,8 +50,7 @@ crypto_core:
 	LOAD_LE2((%a1)+, (%a1)+)	| j12,j13 = x12,x13 = in+0,4
 	LOAD_LE2((%a1)+, (%a1) )	| j14,j15 = x14,x15 = in+8,12
 
-	| Here %a4 := j (= x16)
-
+	| Assign x to registers.
 	movel	%fp,-(%sp)
 	movel	#(ROUNDS/2),-(%sp)
 	leal	-128(%fp),%a3		| %a3 := x
@@ -208,6 +207,7 @@ loop:
 	| %sp+8  = counter
 	| %sp+12 = %fp
 
+	| Flush registers to x.
 	movel	12(%sp),%a3
 	leal	-128(%a3),%a3		| %a3 := x
 	movel	%d0,(%a3)+		| x0
