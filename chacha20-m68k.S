@@ -61,24 +61,23 @@ crypto_core:
 
 	movel	%fp,-(%sp)
 	movel	#(ROUNDS/2),-(%sp)
-	leal	-128(%fp),%a5		| %a5 := x
-	movel	(%a5),%d0
-	movel	(4*4)(%a5),%d1
-	movel	(8*4)(%a5),%d2
-	movel	(12*4)(%a5),%d3
-	movel	(1*4)(%a5),%d4
-	movel	(5*4)(%a5),%d5
-	movel	(9*4)(%a5),%d6
-	movel	(13*4)(%a5),%d7
-	movel	(2*4)(%a5),%a0
-	movel	(6*4)(%a5),%a1
-	movel	(10*4)(%a5),%a2
-	movel	(14*4)(%a5),%a3
-	movel	(3*4)(%a5),%a4
-
-	movel	(11*4)(%a5),%a6
-	movel	(15*4)(%a5),-(%sp)
-	movel	(7*4)(%a5),%a5
+	leal	-128(%fp),%a3		| %a3 := x
+	movel	(%a3)+,%d0
+	movel	(%a3)+,%d4
+	movel	(%a3)+,%a0
+	movel	(%a3)+,%a4
+	movel	(%a3)+,%d1
+	movel	(%a3)+,%d5
+	movel	(%a3)+,%a1
+	movel	(%a3)+,%a5
+	movel	(%a3)+,%d2
+	movel	(%a3)+,%d6
+	movel	(%a3)+,%a2
+	movel	(%a3)+,%a6
+	movel	(%a3)+,%d3
+	movel	(%a3)+,%d7
+	movel	4(%a3),-(%sp)
+	movel	(%a3),%a3
 
 	| %sp+0  = x15
 	| %sp+4  = counter
