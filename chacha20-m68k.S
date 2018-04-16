@@ -21,14 +21,22 @@
 	.global crypto_core
 	.type	crypto_core, @function
 crypto_core:
-	linkw	%fp,#-128
-	moveml	%d2-%d5/%a2-%a5,-(%sp)
-	moveal	12(%fp),%a1	| %a1 := in
-	moveal	16(%fp),%a2	| %a2 := k
-	moveal	20(%fp),%a3	| %a3 := c
+	| Omit link/unlk :)
+	moveml	%d2-%d5/%a2-%a5,-(%sp)	| 8x4
+	leal	-128(%sp),%sp
+	| %sp+0   = x
+	| %sp+64  = j
+	| %sp+128 = saved regs(8x4)
+	| %sp+160 = return address
+	| %sp+164 = 1st argument (out)
+	| %sp+168 = 2nd argument (in)
+#define arg (128 + 8 * 4 + 4)
+	moveal	(arg+4)(%sp),%a1	| %a1 := in
+	moveal	(arg+8)(%sp),%a2	| %a2 := k
+	moveal	(arg+12)(%sp),%a3	| %a3 := c
 
-	leal	-128(%fp),%a4	| %a4 := x
-	leal	-64(%fp),%a5	| %a5 := j
+	moveal	%sp,%a4		| %a4 := x
+	leal	64(%sp),%a5	| %a5 := j
 
 | Load from SRC and bswap it and then store it to x, j.
 |  Inp: SRC
@@ -126,7 +134,7 @@ crypto_core:
 	moveql	#12,%d4		| shift count
 	moveql	#(ROUNDS / 2 -1),%d5	| loop count
 
-	leal	-128(%fp),%a5		| %a5 := x
+	moveal	%sp,%a5			| %a5 := x
 	leal	(3*4)(%a5),%a0		| %a0 := x3
 	| %a1 はループの最後と最初が同じになるので2回目以降は初期化不要
 	leal	(4*4)(%a5),%a1		| %a1 := x4
@@ -166,7 +174,7 @@ column:
 	| Store j + x -> out
 	| %a4 := j
 	| %a5 := x
-	moveal	8(%fp),%a0	| %a0 := out
+	moveal	(arg+0)(%sp),%a0	| %a0 := out
 #if 0
 	moveql	#16-1,%d1
 storeloop:
@@ -193,7 +201,7 @@ storeloop:
 	dbra	%d2,storeloop
 #endif
 
+	leal	128(%sp),%sp
 	moveml	(%sp)+,%d2-%d5/%a2-%a5
-	unlk	%fp
 	rts
 	.size	crypto_core, .-crypto_core
