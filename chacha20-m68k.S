@@ -123,8 +123,8 @@ crypto_core:
 	| QUARTERROUND( x2, x7, x8,x13);
 	| QUARTERROUND( x3, x4, x9,x14);
 
-	moveql	#12,%d4		| shift count
-	moveql	#(ROUNDS / 2 -1),%d5	| loop count
+	moveql	#12,%d4			| useful magical number!
+	moveql	#(ROUNDS/2 -1),%d5	| loop count
 
 	leal	-128(%fp),%a5		| %a5 := x
 	leal	(3*4)(%a5),%a0		| %a0 := x3
