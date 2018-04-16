@@ -94,10 +94,10 @@ crypto_core:
 #define QUARTERROUND(DST0, DST1, DST2, DST3) \
 	movel	(%a0),%d0; \
 	movel	(%a1),%d1; \
-	movel	(%a3),%d3; \
 	addl	%d1,%d0; \
-	movel	(%a2),%d2; \
+	movel	(%a3),%d3; \
 	eorl	%d0,%d3; \
+	movel	(%a2),%d2; \
 	swap	%d3; \
 	addl	%d3,%d2; \
 	eorl	%d2,%d1; \
