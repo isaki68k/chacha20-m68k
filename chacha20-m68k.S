@@ -298,30 +298,30 @@ loop:
 	subql	#1,4(%sp)
 	bne	loop
 
-	movel	%a6,-(%sp)
-	| %sp+0  = x11 (= %a6)
+	movel	%a3,-(%sp)
+	| %sp+0  = x14 (= %a3)
 	| %sp+4  = x15
 	| %sp+8  = counter
 	| %sp+12 = %fp
 
-	movel	12(%sp),%a6
-	leal	-128(%fp),%a6
-	movel	%d0,(%a6)+
-	movel	%d4,(%a6)+
-	movel	%a0,(%a6)+
-	movel	%a4,(%a6)+
-	movel	%d1,(%a6)+
-	movel	%d5,(%a6)+
-	movel	%a1,(%a6)+
-	movel	%a5,(%a6)+
-	movel	%d2,(%a6)+
-	movel	%d6,(%a6)+
-	movel	%a2,(%a6)+
-	movel	(%sp)+,(%a6)+
-	movel	%d3,(%a6)+
-	movel	%d7,(%a6)+
-	movel	%a3,(%a6)+
-	movel	(%sp)+,(%a6)+
+	movel	12(%sp),%a3
+	leal	-128(%a3),%a3
+	movel	%d0,(%a3)+
+	movel	%d4,(%a3)+
+	movel	%a0,(%a3)+
+	movel	%a4,(%a3)+
+	movel	%d1,(%a3)+
+	movel	%d5,(%a3)+
+	movel	%a1,(%a3)+
+	movel	%a5,(%a3)+
+	movel	%d2,(%a3)+
+	movel	%d6,(%a3)+
+	movel	%a2,(%a3)+
+	movel	%a6,(%a3)+
+	movel	%d3,(%a3)+
+	movel	%d7,(%a3)+
+	movel	(%sp)+,(%a3)+
+	movel	(%sp)+,(%a3)+
 	addql	#4,%sp
 	movel	(%sp)+,%a6
 	| %sp, %fp がいきてる
