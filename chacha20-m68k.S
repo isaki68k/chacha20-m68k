@@ -134,20 +134,21 @@ crypto_core:
 	leal	(9*4)(%a5),%a2		| %a2 := x9
 	| %a3 もループ内では sub で調整したほうが速い
 	leal	(14*4)(%a5),%a3		| %a3 := x14
-2:
+roundloop:
 	suba	%d4,%a0		| %a0 := x0
 	subq	#4,%a2		| %a2 := x8
 	subq	#8,%a3		| %a3 := x12
-
-|	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
-|	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x1, x5, x9,x13
-|	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x2, x6,x10,x14
-|	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x3, x7,x11,x15
-4:
+column:
+	| "column" round
+	|QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x0, x4, x8,x12
+	|QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x1, x5, x9,x13
+	|QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x2, x6,x10,x14
+	|QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)	| x3, x7,x11,x15
 	QUARTERROUND((%a0)+, (%a1)+, (%a2)+, (%a3)+)
 	cmpal	%a3,%a4		| %a3 == x16?
-	bnes	4b
+	bnes	column
 
+	| "diagonal" round
 	moveal	%a5,%a0
 	suba	%d4,%a1
 	subq	#8,%a2
@@ -160,7 +161,7 @@ crypto_core:
 	suba	%d4,%a1
 	QUARTERROUND((%a0),  (%a1),  (%a2),  (%a3) )	| x3, x4, x9,x14
 
-	dbra	%d5,2b
+	dbra	%d5,roundloop
 
 	| Store j + x -> out
 	| %a4 := j
@@ -168,15 +169,15 @@ crypto_core:
 	moveal	8(%fp),%a0	| %a0 := out
 #if 0
 	moveql	#16-1,%d1
-3:
+storeloop:
 	movel	(%a4)+,%d0
 	addl	(%a5)+,%d0	| j[i] + x[i]
 	BSWAP32	%d0
 	movel	%d0,(%a0)+	| -> out[i]
-	dbra	%d1, 3b
+	dbra	%d1, storeloop
 #else
 	moveql	#8-1,%d2
-3:
+storeloop:
 	movel	(%a4)+,%d0
 	addl	(%a5)+,%d0	| j[i] + x[i]
 	rorw	#8,%d0
@@ -189,7 +190,7 @@ crypto_core:
 	swap	%d1
 	rorw	#8,%d1
 	movel	%d1,(%a0)+	| -> out[i+1]
-	dbra	%d2,3b
+	dbra	%d2,storeloop
 #endif
 
 	moveml	(%sp)+,%d2-%d5/%a2-%a5
