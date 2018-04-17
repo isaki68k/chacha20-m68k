@@ -182,8 +182,8 @@ QRLOOP:
 	QUARTERROUND(%d1,%d2,%d5,%d7)
 
 	exg	%d7,%a6
-	exg	%d6,%a3
-	exg	%d1,%a0
+	exg	%d5,%a3
+	exg	%d1,%a1
 
 | レジスタマップ
 | d0, d2, d5, a5
