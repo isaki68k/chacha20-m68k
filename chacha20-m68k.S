@@ -1,3 +1,5 @@
+| vi:set ts=8:
+
 | 演算順序 0-1-2-3, 15-14-13-12 こうすることでレジスタ状態の戻しを楽にする。
 | 0, 4, 8, 12
 | 1, 5, 9, 13
@@ -54,10 +56,10 @@ ENTRY:
 					| sp+0	 = fp
 	lea	-64(%fp),%a5		| %a5 = J
 
-	movel	8(%fp),%a0		| %a0 = &c[0]
-	movel	12(%fp),%a1		| %a1 = &k[0]
+	movel	12(%fp),%a0		| %a0 = &c[0]
+	movel	16(%fp),%a1		| %a1 = &k[0]
 	leal	16(%a1),%a2		| %a2 = &k[4]
-	movel	16(%fp),%a3		| %a3 = &in[0]
+	movel	20(%fp),%a3		| %a3 = &in[0]
 
 	moveq	#4-1,%d2
 LDLOOP2:
@@ -217,7 +219,7 @@ QRLOOP:
 
 	movel	12(%sp),%a6	| %a6 = fp
 	leal	-64(%a6),%a5	| %a5 = J
-	movel	4(%a6),%a6	| %a6 = out
+	movel	8(%a6),%a6	| %a6 = out
 
 #define STORE(DREG,DST) \
 	rolw	#8,DREG; \
@@ -265,7 +267,7 @@ STORELOOP:
 	dbra	%d1,STORELOOP
 
 	movel	(%sp)+,%fp
-	movem	(%sp)+,%d2-%d7/%a2-%a5
+	moveml	(%sp)+,%d2-%d7/%a2-%a5
 	unlk	%fp
 	rts
 	.size	crypto_core, .-crypto_core
