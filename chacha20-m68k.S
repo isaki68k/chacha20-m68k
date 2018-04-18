@@ -61,18 +61,33 @@ ENTRY:
 	leal	16(%a1),%a2		| %a2 = &k[4]
 	movel	12(%fp),%a3		| %a3 = &in[0]
 
-	moveq	#4-1,%d2
-LDLOOP2:
-	moveq	#4-1,%d1
-LDLOOP1:
-	LD( (%a0)+, %d0 )		| J[0..15] = bswap( {c,k,in} [0..{4,8,4}] )
-	movel	%d0,(%a5)+		
-	dbra	%d1,LDLOOP1
-	
+	moveq	#4-1,%d7
+LDLOOP:
+	movel	(%a0)+,%d0
+	rolw	#8,%d0
+	movel	(%a0)+,%d1
+	swap	%d0
+	rolw	#8,%d0
+	movel	%d0,(%a5)+
+	rolw	#8,%d1
+	movel	(%a0)+,%d2
+	swap	%d1
+	rolw	#8,%d1
+	movel	%d1,(%a5)+
+	rolw	#8,%d2
+	movel	(%a0),%d3
+	swap	%d2
+	rolw	#8,%d2
+	movel	%d2,(%a5)+
+	rolw	#8,%d3
+	swap	%d3
+	rolw	#8,%d3
+	movel	%d3,(%a5)+
+
 	movel	%a1,%a0
 	movel	%a2,%a1
 	movel	%a3,%a2
-	dbra	%d2,LDLOOP2
+	dbra	%d7,LDLOOP
 
 | レジスタマップ
 | d0, d2, d5, d7
