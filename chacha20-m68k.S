@@ -222,6 +222,7 @@ QRLOOP:
 	rolw	#8,DREG; \
 	movel	DREG,DST;
 
+#if 0
 	addl	(%a5)+,%d0	| X0 += J[0]
 	STORE(%d0,(%a6)+)
 	addl	(%a5)+,%d1	| X1 += J[1]
@@ -260,6 +261,57 @@ STORELOOP:
 	addl	(%a5)+,%d0
 	STORE(%d0,(%a6)+)
 	dbra	%d1,STORELOOP
+#else
+#define ST(DR1,DR2) \
+	rolw	#8,DR1; \
+	swap	DR1; \
+	addl	(%a5)+,DR2; \
+	rolw	#8,DR1; \
+	movel	DR1,(%a6)+;
+
+	addl	(%a5)+,%d0
+	ST(%d0,%d1)		| X0
+	ST(%d1,%a0)		| X1
+	movel	%a0,%d0
+	ST(%d0,%a1)		| X2
+	movel	%a1,%d0
+	ST(%d0,%d2)		| X3
+	ST(%d2,%d3)		| X4
+	ST(%d3,%d4)		| X5
+	ST(%d4,%a2)		| X6
+	movel	%a2,%d0
+	ST(%d0,%d5)		| X7
+	ST(%d5,%a3)		| X8
+	movel	%a3,%d0
+	ST(%d0,%a4)		| X9
+	movel	%a4,%d0
+	ST(%d0,%d6)		| X10
+	ST(%d6,%d7)		| X11
+	rolw	#8,%d7
+	swap	%d7
+	movel	(%sp)+,%d0	| pop X13
+	rolw	#8,%d7
+	movel	%d7,(%a6)+	| X12
+
+	addl	(%a5)+,%d0
+	rolw	#8,%d0
+	movel	(%sp)+,%d1	| pop X14
+	swap	%d0
+	addl	(%a5)+,%d1
+	rolw	#8,%d0
+	movel	%d0,(%a6)+	| X13
+	rolw	#8,%d1
+	movel	(%sp)+,%d2	| pop X15
+	swap	%d1
+	addl	(%a5)+,%d2
+	rolw	#8,%d1
+	movel	%d1,(%a6)+	| X14
+	rolw	#8,%d2
+	swap	%d2
+	rolw	#8,%d2
+	movel	%d2,(%a6)+	| x15
+
+#endif
 
 	movel	(%sp)+,%fp
 	moveml	(%sp)+,%d2-%d7/%a2-%a5
