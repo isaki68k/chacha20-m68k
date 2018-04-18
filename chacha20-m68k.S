@@ -116,7 +116,7 @@ LDLOOP:
 	movel	(10*4)(%a5),%a5		| X10
 
 #define ROUND	20
-	movel	#((12 << 16) + (ROUND / 2 - 1)),%d7	| d7 = {12,counter}
+	movew	#(((256-(ROUND / 2)) << 8) + 12),%d7	| d7 = {?,?,counter,12}
 
 	movel	%a6,-(%sp)		| push X13
 					| sp+0	X13
@@ -125,8 +125,6 @@ LDLOOP:
 					| sp+12	fp
 
 QRLOOP:
-	swap	%d7			| d7 = {counter,12}
-
 | 0, 4, 8, 12
 | 1, 5, 9, 13
 | 2, 6, 10, 14
@@ -226,8 +224,8 @@ QRLOOP:
 | 1, 6, 11, 12 = d1 d3 d5 d6
 	QUARTERROUND(%d1,%d3,%d5,%d6)
 
-	swap	%d7		| d7 = {12,counter}
-	dbra	%d7,QRLOOP
+	addiw	#256,%d7
+	bcc	QRLOOP
 
 	movel	%a6,(%sp)	| modify X13
 				| sp+0	X13
@@ -338,13 +336,13 @@ STORELOOP:
 	rolw	#8,%d1
 	movel	(%sp)+,%d2	| pop X15
 	swap	%d1
-	addl	(%a5)+,%d2
+	addl	(%a5),%d2
 	rolw	#8,%d1
 	movel	%d1,(%a6)+	| X14
 	rolw	#8,%d2
 	swap	%d2
 	rolw	#8,%d2
-	movel	%d2,(%a6)+	| x15
+	movel	%d2,(%a6)	| x15
 
 #endif
 
