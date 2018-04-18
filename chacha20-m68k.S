@@ -56,10 +56,10 @@ ENTRY:
 					| sp+0	 = fp
 	lea	-64(%fp),%a5		| %a5 = J
 
-	movel	12(%fp),%a0		| %a0 = &c[0]
+	movel	20(%fp),%a0		| %a0 = &c[0]
 	movel	16(%fp),%a1		| %a1 = &k[0]
 	leal	16(%a1),%a2		| %a2 = &k[4]
-	movel	20(%fp),%a3		| %a3 = &in[0]
+	movel	12(%fp),%a3		| %a3 = &in[0]
 
 	moveq	#4-1,%d2
 LDLOOP2:
