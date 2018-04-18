@@ -51,16 +51,16 @@
 	.type	crypto_core, @function
 crypto_core:
 ENTRY:
-	linkw	%fp,#-64
-	moveml	%d2-%d7/%a2-%a5,-(%sp)
-	movel	%fp,-(%sp)		| save fp
-					| sp+0	 = fp
-	lea	-64(%fp),%a5		| %a5 = J
+	movel	%sp,%a0
+	moveml	%d2-%d7/%a2-%a6,-(%sp)
 
-	movel	20(%fp),%a0		| %a0 = &c[0]
-	movel	16(%fp),%a1		| %a1 = &k[0]
-	leal	16(%a1),%a2		| %a2 = &k[4]
-	movel	12(%fp),%a3		| %a3 = &in[0]
+	leal	-12-64(%sp),%a6
+
+	addql	#8,%a0		| skip PC, out
+	movel	(%a0)+,%a3	| %a3 = &in[0]
+	movel	(%a0)+,%a1	| %a1 = &k[0]
+	leal	16(%a1),%a2	| %a2 = &k[4]
+	movel	(%a0),%a0	| %a0 = &c[0]
 
 	moveq	#4-1,%d7
 LDLOOP:
@@ -69,26 +69,34 @@ LDLOOP:
 	movel	(%a0)+,%d1
 	swap	%d0
 	rolw	#8,%d0
-	movel	%d0,(%a5)+
+	movel	%d0,(%a6)+
 	rolw	#8,%d1
 	movel	(%a0)+,%d2
 	swap	%d1
 	rolw	#8,%d1
-	movel	%d1,(%a5)+
+	movel	%d1,(%a6)+
 	rolw	#8,%d2
 	movel	(%a0),%d3
 	swap	%d2
 	rolw	#8,%d2
-	movel	%d2,(%a5)+
+	movel	%d2,(%a6)+
 	rolw	#8,%d3
 	swap	%d3
 	rolw	#8,%d3
-	movel	%d3,(%a5)+
+	movel	%d3,(%a6)+
 
 	movel	%a1,%a0
 	movel	%a2,%a1
 	movel	%a3,%a2
 	dbra	%d7,LDLOOP
+				| sp-76 J0
+				| ...
+				| sp-16 J15
+				| sp-12 (X13)
+				| sp-8  (X14)
+				| sp-4  (X15)
+				| sp+0  movem 11 longword
+				| sp+44 retPC
 
 | レジスタマップ
 | d0, d2, d4, d6
@@ -96,33 +104,43 @@ LDLOOP:
 | a0, d3, a5, (x14)
 | a1, a3, d5, (x15)
 
-	movel	-(%a5),-(%sp)		| X15
-	movel	-(%a5),-(%sp)		| X14
-	movel	-(%a5),%a6		| X13
-	movel	-(%a5),%d6		| X12
-	movel	-(%a5),%d5		| X11
-	subql	#4,%a5			| skip X10
-	movel	-(%a5),%a4		| X9
-	movel	-(%a5),%d4		| X8
-	movel	-(%a5),%a3		| X7
-	movel	-(%a5),%d3		| X6
-	movel	-(%a5),%a2		| X5
-	movel	-(%a5),%d2		| X4
-	movel	-(%a5),%a1		| X3
-	movel	-(%a5),%a0		| X2
-	movel	-(%a5),%d1		| X1
-	movel	-(%a5),%d0		| X0
+				| work push
+	
+	movel	%d3,-(%sp)	| X15
+	movel	%d2,-(%sp)	| X14
+	movel	%d1,-(%sp)	| X13
+				| sp-64 J0
+				| ...
+				| sp-4  J15
+				| sp+0  X13
+				| sp+4  X14
+				| sp+8  X15
+				| sp+12 movem
 
-	movel	(10*4)(%a5),%a5		| X10
+	movel	%d0,%d6			| X12
+
+	leal	-64(%a6),%a6
+	movel	(%a6)+,%d0		| X0
+	movel	(%a6)+,%d1		| X1
+	movel	(%a6)+,%a0		| X2
+	movel	(%a6)+,%a1		| X3
+	movel	(%a6)+,%d2		| X4
+	movel	(%a6)+,%a2		| X5
+	movel	(%a6)+,%d3		| X6
+	movel	(%a6)+,%a3		| X7
+	movel	(%a6)+,%d4		| X8
+	movel	(%a6)+,%a4		| X9
+	movel	(%a6)+,%a5		| X10
+	movel	(%a6),%d5		| X11
+
+	movel	(%sp),%a6		| X13
 
 #define ROUND	20
 	movew	#(((256-(ROUND / 2)) << 8) + 12),%d7	| d7 = {?,?,counter,12}
 
-	movel	%a6,-(%sp)		| push X13
 					| sp+0	X13
 					| sp+4	X14
 					| sp+8	X15
-					| sp+12	fp
 
 QRLOOP:
 | 0, 4, 8, 12
@@ -228,67 +246,25 @@ QRLOOP:
 	bcc	QRLOOP
 
 	movel	%a6,(%sp)	| modify X13
-				| sp+0	X13
-				| sp+4	X14
-				| sp+8	X15
-				| sp+12	fp
+				| sp-64 J0 
+				| ...
+				| sp-4  J15
+				| sp+0  X13
+				| sp+4  X14
+				| sp+8  X15
+				| sp+12 movem 11 longword
+				| sp+56 retPC
+				| sp+60 out
 	movel	%a5,%d7		| d7 = X10
 
-	movel	12(%sp),%a6	| %a6 = fp
-	leal	-64(%a6),%a5	| %a5 = J
-	movel	8(%a6),%a6	| %a6 = out
-
+	leal	-64(%sp),%a5	| %a5 = &J[0]
+	movel	60(%sp),%a6	| %a6 = out
+	
 | d0, d2, d4, d6
 | d1, a2, a4, (0)
 | a0, d3, d7, (4)
 | a1, a3, d5, (8)
 
-#define STORE(DREG,DST) \
-	rolw	#8,DREG; \
-	swap	DREG; \
-	rolw	#8,DREG; \
-	movel	DREG,DST;
-
-#if 0
-	addl	(%a5)+,%d0	| X0 += J[0]
-	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%d1	| X1 += J[1]
-	STORE(%d1,(%a6)+)
-	addl	(%a5)+,%a0	| X2
-	movel	%a0,%d0
-	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%a1	| X3
-	movel	%a1,%d0
-	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%d2	| X4
-	STORE(%d2,(%a6)+)
-	addl	(%a5)+,%a2	| X5
-	movel	%a2,%d0
-	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%d3	| X6
-	STORE(%d3,(%a6)+)
-	addl	(%a5)+,%a3	| X7
-	movel	%a3,%d0
-	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%d4	| X8
-	STORE(%d4,(%a6)+)
-	addl	(%a5)+,%a4	| X9
-	movel	%a4,%d0
-	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%d7	| X10
-	STORE(%d7,(%a6)+)
-	addl	(%a5)+,%d5	| X11
-	STORE(%d5,(%a6)+)
-	addl	(%a5)+,%d6	| X12
-	STORE(%d6,(%a6)+)
-
-	moveq	#3-1,%d1
-STORELOOP:
-	movel	(%sp)+,%d0	| pop X13,X14,X15
-	addl	(%a5)+,%d0
-	STORE(%d0,(%a6)+)
-	dbra	%d1,STORELOOP
-#else
 #define ST(DR1,DR2) \
 	rolw	#8,DR1; \
 	swap	DR1; \
@@ -344,11 +320,7 @@ STORELOOP:
 	rolw	#8,%d2
 	movel	%d2,(%a6)	| x15
 
-#endif
-
-	movel	(%sp)+,%fp
-	moveml	(%sp)+,%d2-%d7/%a2-%a5
-	unlk	%fp
+	moveml	(%sp)+,%d2-%d7/%a2-%a6
 	rts
 	.size	crypto_core, .-crypto_core
 
