@@ -62,6 +62,8 @@ ENTRY:
 	leal	16(%a1),%a2		| %a2 = &k[4]
 	movel	12(%fp),%a3		| %a3 = &in[0]
 
+	movel	%a5,%a6			| %a6 = J (break fp)
+
 	moveq	#4-1,%d7
 LDLOOP:
 	movel	(%a0)+,%d0
@@ -96,29 +98,28 @@ LDLOOP:
 | a0, d3, a5, (x14)
 | a1, a3, d5, (x15)
 
-	movel	-(%a5),-(%sp)		| X15
-	movel	-(%a5),-(%sp)		| X14
-	movel	-(%a5),%a6		| X13
-	movel	-(%a5),%d6		| X12
-	movel	-(%a5),%d5		| X11
-	subql	#4,%a5			| skip X10
-	movel	-(%a5),%a4		| X9
-	movel	-(%a5),%d4		| X8
-	movel	-(%a5),%a3		| X7
-	movel	-(%a5),%d3		| X6
-	movel	-(%a5),%a2		| X5
-	movel	-(%a5),%d2		| X4
-	movel	-(%a5),%a1		| X3
-	movel	-(%a5),%a0		| X2
-	movel	-(%a5),%d1		| X1
-	movel	-(%a5),%d0		| X0
+	movel	%d3,-(%sp)		| X15
+	movel	%d2,-(%sp)		| X14
+	movel	%d0,%d6			| X12
+	movel	%d1,-(%sp)		| X13
 
-	movel	(10*4)(%a5),%a5		| X10
+	movel	(%a6)+,%d0		| X0
+	movel	(%a6)+,%d1		| X1
+	movel	(%a6)+,%a0		| X2
+	movel	(%a6)+,%a1		| X3
+	movel	(%a6)+,%d2		| X4
+	movel	(%a6)+,%a2		| X5
+	movel	(%a6)+,%d3		| X6
+	movel	(%a6)+,%a3		| X7
+	movel	(%a6)+,%d4		| X8
+	movel	(%a6)+,%a4		| X9
+	movel	(%a6)+,%a5		| X10
+	movel	(%a6),%d5		| X11
 
 #define ROUND	20
 	movew	#(((256-(ROUND / 2)) << 8) + 12),%d7	| d7 = {?,?,counter,12}
 
-	movel	%a6,-(%sp)		| push X13
+	movel	(%sp),%a6		| reload X13
 					| sp+0	X13
 					| sp+4	X14
 					| sp+8	X15
