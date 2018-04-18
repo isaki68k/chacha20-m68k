@@ -132,11 +132,6 @@ QRLOOP:
 | 1, 5, 9, 13 = d1 d3 d5 d7
 	QUARTERROUND(%d1,%d3,%d5,%d7)
 
-| レジスタマップ
-| d0, d2, a3, a5
-| d1, d3, d5, d7
-| a0, d4, a4, a6
-| a1, a2, d6, ()
 
 	exg	%d1,%a0
 	exg	%d5,%a4
