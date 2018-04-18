@@ -14,23 +14,24 @@
 | レジスタマップ
 | 最初と最後にアクセスする位置をデータレジスタにする。
 | 初期状態と最終状態を同じにすることでループしやすい。
-| d0, d2, d5, d7
-| d1, d3, a3, a5
-| a0, d4, a4, a6
-| a1, a2, d6, ()
+| d0, d2, d4, d6
+| d1, a2, a4, a6
+| a0, d3, a5, (x14)
+| a1, a3, d5, (x15)
+| d7 はワークレジスタ。
 
 | a+=b; d^=a; d=rol(d,16)
 | c+=d; b^=c; b=rol(b,12)
 | a+=b; d^=a; d=rol(d,8)
 | c+=d; b^=c; b=rol(b,7)
+| %d7 の下位に 12 が置かれていること。
 #define QUARTERROUND(A,B,C,D)	\
 	addl	B,A; \
 	eorl	A,D; \
 	swap	D; \
 	addl	D,C; \
 	eorl	C,B; \
-	swap	B; \
-	rorl	#4,B; \
+	roll	%d7,B; \
 	addl	B,A; \
 	eorl	A,D; \
 	roll	#8,D; \
@@ -90,146 +91,159 @@ LDLOOP:
 	dbra	%d7,LDLOOP
 
 | レジスタマップ
-| d0, d2, d5, d7
-| d1, d3, a3, a5
-| a0, d4, a4, a6
-| a1, a2, d6, ()
+| d0, d2, d4, d6
+| d1, a2, a4, a6
+| a0, d3, a5, (x14)
+| a1, a3, d5, (x15)
 
 	movel	-(%a5),-(%sp)		| X15
-	movel	-(%a5),%a6		| X14 (fp broken here)
-	subql	#4,%a5			| skip X13;
-	movel	-(%a5),%d7		| X12
-	movel	-(%a5),%d6		| X11
-	movel	-(%a5),%a4		| X10
-	movel	-(%a5),%a3		| X9
-	movel	-(%a5),%d5		| X8
-	movel	-(%a5),%a2		| X7
-	movel	-(%a5),%d4		| X6
-	movel	-(%a5),%d3		| X5
+	movel	-(%a5),-(%sp)		| X14
+	movel	-(%a5),%a6		| X13
+	movel	-(%a5),%d6		| X12
+	movel	-(%a5),%d5		| X11
+	subql	#4,%a5			| skip X10
+	movel	-(%a5),%a4		| X9
+	movel	-(%a5),%d4		| X8
+	movel	-(%a5),%a3		| X7
+	movel	-(%a5),%d3		| X6
+	movel	-(%a5),%a2		| X5
 	movel	-(%a5),%d2		| X4
 	movel	-(%a5),%a1		| X3
 	movel	-(%a5),%a0		| X2
 	movel	-(%a5),%d1		| X1
 	movel	-(%a5),%d0		| X0
 
-	movel	(13*4)(%a5),%a5		| X13
+	movel	(10*4)(%a5),%a5		| X10
 
 #define ROUND	20
-	movel	#(ROUND/2),-(%sp)	| counter
-					| sp+0	counter
-					| sp+4	X15
-					| sp+8	fp
+	movel	#((12 << 16) + (ROUND / 2 - 1)),%d7	| d7 = {12,counter}
+
+	movel	%a6,-(%sp)		| push X13
+					| sp+0	X13
+					| sp+4	X14
+					| sp+8	X15
+					| sp+12	fp
 
 QRLOOP:
+	swap	%d7			| d7 = {counter,12}
 
 | 0, 4, 8, 12
 | 1, 5, 9, 13
 | 2, 6, 10, 14
 | 3, 7, 11, 15
 | レジスタマップ
-| d0, d2, d5, d7
-| d1, d3, a3, a5
-| a0, d4, a4, a6
-| a1, a2, d6, ()
-
-| 0, 4, 8, 12 = d0 d2 d5 d7
-	QUARTERROUND(%d0,%d2,%d5,%d7)
-
-	exg	%d5,%a3
-	exg	%d7,%a5
-
-| レジスタマップ
-| d0, d2, a3, a5
-| d1, d3, d5, d7
-| a0, d4, a4, a6
-| a1, a2, d6, ()
-
-| 1, 5, 9, 13 = d1 d3 d5 d7
-	QUARTERROUND(%d1,%d3,%d5,%d7)
-
-
-	exg	%d1,%a0
-	exg	%d5,%a4
-	exg	%d7,%a6
-
-| レジスタマップ
-| d0, d2, a3, a5
-| a0, d3, a4, a6
-| d1, d4, d5, d7
-| a1, a2, d6, ()
-
-| 2, 6, 10, 14 = d1 d4 d5 d7
-	QUARTERROUND(%d1,%d4,%d5,%d7)
-
-	movel	%d7,-(%sp)	| push X14
-	exg	%d1,%a1
-	exg	%d4,%a2
-	movel	8(%sp),%d7	| X15
-| レジスタマップ
-| d0, d2, a3, a5
-| a0, d3, a4, a6
-| a1, a2, d5, ()
-| d1, d4, d6, d7
-
-
-| 3, 7, 11, 15 = d1 d4 d6 d7
-	QUARTERROUND(%d1,%d4,%d6,%d7)
-
-| 0, 5, 10, 15 = d0 d3 d5 d7
-	QUARTERROUND(%d0,%d3,%d5,%d7)
-
-	movel	%d7,8(%sp)	| X15
-	exg	%d5,%a4
-	movel	(%sp)+,%d7	| pop X14
-
-| レジスタマップ
-| d0, d2, a3, a5
-| a0, d3, d5, a6
-| a1, a2, a4, d7
-| d1, d4, d6, ()
-
-| 3, 4, 9, 14 = d1 d2 d5 d7
-	QUARTERROUND(%d1,%d2,%d5,%d7)
-
-	exg	%d7,%a6
-	exg	%d5,%a3
-	exg	%d1,%a1
-
-| レジスタマップ
-| d0, d2, d5, a5
-| a0, d3, a3, d7
+| d0, d2, d4, d6
 | d1, a2, a4, a6
-| a1, d4, d6, ()
+| a0, d3, a5, (4)
+| a1, a3, d5, (8)
 
-| 2, 7, 8, 13 = d1 d4 d5 d7
-	QUARTERROUND(%d1,%d4,%d5,%d7)
+| 0, 4, 8, 12 = d0 d2 d4 d6
+	QUARTERROUND(%d0,%d2,%d4,%d6)
 
-	exg	%d7,%a5
-	exg	%d4,%a2
+	exg	%d2,%a2
+	exg	%d4,%a4
+	exg	%d6,%a6
+
+| レジスタマップ
+| d0, a2, a4, a6
+| d1, d2, d4, d6
+| a0, d3, a5, (4)
+| a1, a3, d5, (8)
+
+| 1, 5, 9, 13 = d1 d2 d4 d6
+	QUARTERROUND(%d1,%d2,%d4,%d6)
+
+	movel	%d6,(%sp)+	| save X13
+	exg	%d1,%a0
+	movel	(%sp),%d6	| load X14
+	exg	%d4,%a5
+
+| レジスタマップ
+| d0, a2, a4, a6
+| a0, d2, a5, (0)
+| d1, d3, d4, d6
+| a1, a3, d5, (8)
+
+| 2, 6, 10, 14 = d1 d3 d4 d6
+	QUARTERROUND(%d1,%d3,%d4,%d6)
+
+	movel	%d6,(%sp)+	| X14
+	exg	%d1,%a1
+	movel	(%sp),%d6	| X15
+	exg	%d3,%a3
+
+| レジスタマップ
+| d0, a2, a4, a6
+| a0, d2, a5, (0)
+| a1, a3, d4, (4)
+| d1, d3, d5, d6
+
+
+| 3, 7, 11, 15 = d1 d3 d5 d6
+	QUARTERROUND(%d1,%d3,%d5,%d6)
+
+| 0, 5, 10, 15 = d0 d2 d4 d6
+	QUARTERROUND(%d0,%d2,%d4,%d6)
+
+	movel	%d6,(%sp)	| X15
+	exg	%d4,%a5
+	movel	-(%sp),%d6	| X14
+	exg	%d2,%a2
+
+| レジスタマップ
+| d0, d2, a4, a6
+| a0, a2, d4, (0)
+| a1, a3, a5, d6
+| d1, d3, d5, (8)
+
+| 3, 4, 9, 14 = d1 d2 d4 d6
+	QUARTERROUND(%d1,%d2,%d4,%d6)
+
+	movel	%d6,(%sp)	| X14
+	exg	%d4,%a4
+	movel	-(%sp),%d6	| X13
+	exg	%d1,%a1
+
+| レジスタマップ
+| d0, d2, d4, a6
+| a0, a2, a4, d6
+| d1, a3, a5, (4)
+| a1, d3, d5, (8)
+
+| 2, 7, 8, 13 = d1 d3 d4 d6
+	QUARTERROUND(%d1,%d3,%d4,%d6)
+
+	exg	%d6,%a6
+	exg	%d3,%a3
 	exg	%d1,%a0
 
 | レジスタマップ
-| d0, d2, d5, d7
-| d1, d3, a3, a5
-| a0, d4, a4, a6
-| a1, a2, d6, ()
+| d0, d2, d4, d6
+| d1, a2, a4, a6
+| a0, d3, a5, (4)
+| a1, a3, d5, (8)
 
-| 1, 6, 11, 12 = d1 d4 d6 d7
-	QUARTERROUND(%d1,%d4,%d6,%d7)
+| 1, 6, 11, 12 = d1 d3 d5 d6
+	QUARTERROUND(%d1,%d3,%d5,%d6)
 
-	subql	#1,(%sp)		| counter
-	bne	QRLOOP
+	swap	%d7		| d7 = {12,counter}
+	dbra	%d7,QRLOOP
 
-	movel	%a6,(%sp)	| discard counter && push X14
-	movel	%a5,-(%sp)	| push X13
+	movel	%a6,(%sp)	| modify X13
 				| sp+0	X13
 				| sp+4	X14
 				| sp+8	X15
 				| sp+12	fp
+	movel	%a5,%d7		| d7 = X10
 
 	movel	12(%sp),%a6	| %a6 = fp
 	leal	-64(%a6),%a5	| %a5 = J
 	movel	8(%a6),%a6	| %a6 = out
+
+| d0, d2, d4, d6
+| d1, a2, a4, (0)
+| a0, d3, d7, (4)
+| a1, a3, d5, (8)
 
 #define STORE(DREG,DST) \
 	rolw	#8,DREG; \
@@ -250,25 +264,25 @@ QRLOOP:
 	STORE(%d0,(%a6)+)
 	addl	(%a5)+,%d2	| X4
 	STORE(%d2,(%a6)+)
-	addl	(%a5)+,%d3	| X5
-	STORE(%d3,(%a6)+)
-	addl	(%a5)+,%d4	| X6
-	STORE(%d4,(%a6)+)
-	addl	(%a5)+,%a2	| X7
+	addl	(%a5)+,%a2	| X5
 	movel	%a2,%d0
 	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%d5	| X8
-	STORE(%d5,(%a6)+)
-	addl	(%a5)+,%a3	| X9
+	addl	(%a5)+,%d3	| X6
+	STORE(%d3,(%a6)+)
+	addl	(%a5)+,%a3	| X7
 	movel	%a3,%d0
 	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%a4	| X10
+	addl	(%a5)+,%d4	| X8
+	STORE(%d4,(%a6)+)
+	addl	(%a5)+,%a4	| X9
 	movel	%a4,%d0
 	STORE(%d0,(%a6)+)
-	addl	(%a5)+,%d6	| X11
-	STORE(%d6,(%a6)+)
-	addl	(%a5)+,%d7	| X12
+	addl	(%a5)+,%d7	| X10
 	STORE(%d7,(%a6)+)
+	addl	(%a5)+,%d5	| X11
+	STORE(%d5,(%a6)+)
+	addl	(%a5)+,%d6	| X12
+	STORE(%d6,(%a6)+)
 
 	moveq	#3-1,%d1
 STORELOOP:
@@ -284,6 +298,11 @@ STORELOOP:
 	rolw	#8,DR1; \
 	movel	DR1,(%a6)+;
 
+| d0, d2, d4, d6
+| d1, a2, a4, (0)
+| a0, d3, d7, (4)
+| a1, a3, d5, (8)
+
 	addl	(%a5)+,%d0
 	ST(%d0,%d1)		| X0
 	ST(%d1,%a0)		| X1
@@ -291,22 +310,23 @@ STORELOOP:
 	ST(%d0,%a1)		| X2
 	movel	%a1,%d0
 	ST(%d0,%d2)		| X3
-	ST(%d2,%d3)		| X4
-	ST(%d3,%d4)		| X5
-	ST(%d4,%a2)		| X6
+	ST(%d2,%a2)		| X4
 	movel	%a2,%d0
-	ST(%d0,%d5)		| X7
-	ST(%d5,%a3)		| X8
+	ST(%d0,%d3)		| X5
+	ST(%d3,%a3)		| X6
 	movel	%a3,%d0
-	ST(%d0,%a4)		| X9
+	ST(%d0,%d4)		| X7
+	ST(%d4,%a4)		| X8
 	movel	%a4,%d0
-	ST(%d0,%d6)		| X10
-	ST(%d6,%d7)		| X11
-	rolw	#8,%d7
-	swap	%d7
+	ST(%d0,%d7)		| X9
+	ST(%d7,%d5)		| X10
+	ST(%d5,%d6)		| X11
+
+	rolw	#8,%d6
+	swap	%d6
 	movel	(%sp)+,%d0	| pop X13
-	rolw	#8,%d7
-	movel	%d7,(%a6)+	| X12
+	rolw	#8,%d6
+	movel	%d6,(%a6)+	| X12
 
 	addl	(%a5)+,%d0
 	rolw	#8,%d0
@@ -334,6 +354,7 @@ STORELOOP:
 	rts
 	.size	crypto_core, .-crypto_core
 
+| XXX: old
 |     D0  D1  D2  D3  D4  D5  D6  D7  A0 A1 A2 A3 A4 A5 A6 (SP)
 | Q1:[ 0]  1 [ 4]  5   6 [ 8] 11 [12]  2  3  7  9 10 13 14 15
 |      |   |   |   |   |   X   |   X   |  |  |  *  |  *  |  |
