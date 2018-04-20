@@ -1,6 +1,6 @@
 | vi:set ts=8:
 
-| リファレンスでの順序はこうだが、
+| QuarterRound order is following:
 |  QR( x0, x4, x8,x12)
 |  QR( x1, x5, x9,x13)
 |  QR( x2, x6,x10,x14)
@@ -9,9 +9,9 @@
 |  QR( x1, x6,x11,x12)
 |  QR( x2, x7, x8,x13)
 |  QR( x3, x4, x9,x14)
-| 前半4つまたは後半4つ (これが一つの Round) の中での順序に依存はないため、
-| 後半("Diagonal Round")の演算順序を入れ替える。
-| こうすることでレジスタ状態の戻しを楽にする。
+| However, since there is no dependency on the order within a Round,
+| so exchange the order in "Diagonal Round"(second half round).  It makes
+| register transition easier:
 |  QR( x0, x4, x8,x12)
 |  QR( x1, x5, x9,x13)
 |  QR( x2, x6,x10,x14)
@@ -20,22 +20,12 @@
 |  QR( x3, x4, x9,x14)
 |  QR( x2, x7, x8,x13)
 |  QR( x1, x6,x11,x12)
-
-| out[16], c[4], k[8], in[4]
-| レジスタマップ
-| 最初と最後にアクセスする位置をデータレジスタにする。
-| 初期状態と最終状態を同じにすることでループしやすい。
-| d0, d2, d4, d6
-| d1, a2, a4, a6
-| a0, d3, a5, (x14)
-| a1, a3, d5, (x15)
-| d7 はワークレジスタ。
 
 | a+=b; d^=a; d<<<=16;
 | c+=d; b^=c; b<<<=12;
 | a+=b; d^=a; d<<<=8;
 | c+=d; b^=c; b<<<=7;
-| %d7 の下位バイトに 12 が置かれていること。
+| Let the low byte of %d7 = 12.
 #define QUARTERROUND(A,B,C,D)	\
 	addl	B,A; \
 	eorl	A,D; \
@@ -56,8 +46,7 @@
 crypto_core:
 	linkw	%fp,#-64
 	moveml	%d2-%d7/%a2-%a5,-(%sp)
-	movel	%fp,-(%sp)		| save fp
-					| sp+0	 = fp
+	movel	%fp,-(%sp)		| save %fp
 	lea	-64(%fp),%a5		| %a5 = j
 
 	movel	20(%fp),%a0		| %a0 = &c[0]
@@ -68,24 +57,20 @@ crypto_core:
 	/*
 	 * Load
 	 *
-	 * for (i = 0; i < 3; i++)
+	 * for (i = 0; i < 4; i++)
 	 *   j[i] = le32toh(c[i]);
-	 * for (i = 0; i < 3; i++)
+	 * for (i = 0; i < 8; i++)
 	 *   j[4+i] = le32toh(k[i]);
-	 * for (i = 0; i < 3; i++)
+	 * for (i = 0; i < 4; i++)
 	 *   j[12+i] = le32toh(in[i]);
-	 *
-	 * 4ロングワードずつ引数からロードして、バイトスワップしたものを
-	 * j に保存する。リトルエンディアン CPU でメモリストリームから
-	 * レジスタに直接読み込むとバイトの上下が交換された格好になるが、
-	 * chacha20 ではこの特性を利用している。そのためビッグエンディアン
-	 * CPU で同様のことを起こすためには明示的にエンディアン変換を行う
-	 * 必要がある。
-	 * ところでどうして m68k には bswap32 みたいな命令がないのか。
 	 */
 
-	movel	%a5,%a6			| %a6 = j (break fp)
+	movel	%a5,%a6			| %a6 = j (break %fp here)
 
+	| To improve performance, memory access instructions and register
+	| operation instructions should be interleaved though it makes
+	| difficult for humans to read...
+	| And why m68k does not have bswap32 :)
 	moveq	#4-1,%d7
 LDLOOP:
 	movel	(%a0)+,%d0
@@ -141,12 +126,12 @@ LDLOOP:
 
 #define ROUND	20
 	| %d7 := $xxxxCCRR
-	| CC (high byte) is loop counter.
+	| CC (high byte) is loop counter and detects carry.
 	| RR (low byte) is rotate counter(12). Note that rotate instructions
-	| refer only least significant 6 bits of rotate register.
+	| only refer the lower 6 bits of rotate register.
 	movew	#(((256-(ROUND / 2)) << 8) + 12),%d7
 
-	movel	(%sp),%a6		| reload X13
+	movel	(%sp),%a6		| reload x13
 	| sp+0  x13
 	| sp+4  x14
 	| sp+8  x15
@@ -241,11 +226,14 @@ QRLOOP:
 
 	/*
 	 * Store
+	 *
+	 * for (i = 0; i < 16; i++)
+	 *   out[i] = htole32(x[i] + j[i]);
 	 */
 	movel	%a6,(%sp)	| save x13
-	| sp+0  X13
-	| sp+4  X14
-	| sp+8  X15
+	| sp+0  x13
+	| sp+4  x14
+	| sp+8  x15
 	| sp+12 fp
 	movel	%a5,%d7		| %d7 := x10
 
