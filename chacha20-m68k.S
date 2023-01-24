@@ -1,5 +1,74 @@
 | vi:set ts=8:
 
+
+|void ChaCha20_ctr32(
+|	unsigned char *out,
+|	const unsigned char *inp,
+|	size_t len,
+|	const unsigned int key[8],
+|	const unsigned int counter[4])
+
+	.global	ChaCha20_ctr32
+	.type	ChaCha20_ctr32, @function
+ChaCha20_ctr32:
+	exg	%sp,%sp
+	linkw	%fp,#-128
+	moveml	%d2-%d3/%a2,-(%sp)
+	movel	20(%fp),%a1		| %a1 = &key[0]
+	leal	-64(%fp),%a0		| %a0 = &input[0]
+	movel	#0x65787061,(%a0)+
+	movel	#0x6e642033,(%a0)+
+	movel	#0x322d6279,(%a0)+
+	movel	#0x7465206b,(%a0)+
+	moveql	#8-1,%d0
+1:
+	movel	(%a1)+,(%a0)+		| input[] = key[]
+	dbra	%d0,1b
+
+	movel	24(%fp),%a1		| %a1 = &counter[0]
+	movel	(%a1)+,(%a0)+		| input[] = counter[]
+	movel	(%a1)+,(%a0)+
+	movel	(%a1)+,(%a0)+
+	movel	(%a1)+,(%a0)+
+
+	| a0 = buf
+	| a1 = inp
+	| a2 = out
+
+	movel	8(%fp),%a2		| %a2 = out
+	movel	12(%fp),%a1		| %a1 = inp
+	movel	16(%fp),%d2		| %d2 = len
+	bra	loop_enter
+loop:
+	leal	-128(%fp),%a0		| %a0 = &buf
+	moveml	%d0-%d1/%a0-%a1,-(%sp)
+	peal	-64(%fp)		| constant
+	peal	(-64+4*4)(%fp)		| key
+	peal	(-64+12*4)(%fp)		| in
+	movel	%a0,-(%sp)
+	bsr	chacha20_core
+	leal	16(%sp),%sp
+	moveml	(%sp)+,%d0-%d1/%a0-%a1
+
+	addql	#1,(-64+12*4)(%fp)	| input[12]++
+
+	moveq	#64-1,%d3		| sizeof(buf)
+loop2:
+	moveb	(%a0)+,%d0
+	moveb	(%a1)+,%d1
+	eorb	%d1,%d0
+	moveb	%d0,(%a2)+
+	subql	#1,%d2
+	dbne	%d3,loop2
+loop_enter:
+	bnes	loop
+	moveml	(%sp)+,%d2-%d3/%a2
+	unlk	%fp
+	rts
+
+	.size	ChaCha20_ctr32, .-ChaCha20_ctr32
+
+
 | QuarterRound order is following:
 |  QR( x0, x4, x8,x12)
 |  QR( x1, x5, x9,x13)
@@ -40,10 +109,7 @@
 	eorl	C,B; \
 	roll	#7,B;
 
-
-	.global	crypto_core
-	.type	crypto_core, @function
-crypto_core:
+chacha20_core:
 	linkw	%fp,#-64
 	moveml	%d2-%d7/%a2-%a5,-(%sp)
 	movel	%fp,-(%sp)		| save %fp
@@ -301,4 +367,4 @@ QRLOOP:
 	moveml	(%sp)+,%d2-%d7/%a2-%a5
 	unlk	%fp
 	rts
-	.size	crypto_core, .-crypto_core
+	.size	chacha20_core, .-chacha20_core
