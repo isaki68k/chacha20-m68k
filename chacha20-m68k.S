@@ -34,7 +34,6 @@
 	.global	ChaCha20_ctr32
 	.type	ChaCha20_ctr32, @function
 ChaCha20_ctr32:
-	exg	%sp,%sp
 	linkw	%fp,#-128
 	moveml	%d2-%d3/%a2,-(%sp)
 	movel	20(%fp),%a1		| %a1 = &key[0]
