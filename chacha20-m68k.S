@@ -91,7 +91,7 @@ loop_enter:
 	.size	ChaCha20_ctr32, .-ChaCha20_ctr32
 
 
-| QuarterRound order is following:
+| The sequence of QuarterRound in the official document is as follows:
 |  QR( x0, x4, x8,x12)
 |  QR( x1, x5, x9,x13)
 |  QR( x2, x6,x10,x14)
@@ -100,9 +100,9 @@ loop_enter:
 |  QR( x1, x6,x11,x12)
 |  QR( x2, x7, x8,x13)
 |  QR( x3, x4, x9,x14)
-| However, since there is no dependency on the order within a Round,
-| so exchange the order in "Diagonal Round"(second half round).  It makes
-| register transition easier:
+| However, the latter four QR("Diagonal Round") operations are independent of
+| each other, so to simplify subsequent register transitions, we reorder them
+| as follows:
 |  QR( x0, x4, x8,x12)
 |  QR( x1, x5, x9,x13)
 |  QR( x2, x6,x10,x14)
@@ -116,7 +116,7 @@ loop_enter:
 | c+=d; b^=c; b<<<=12;
 | a+=b; d^=a; d<<<=8;
 | c+=d; b^=c; b<<<=7;
-| Let the low byte of %d7 = 12.
+| The least significant byte of %d7 must be set to 12.
 #define QUARTERROUND(A,B,C,D)	\
 	addl	B,A; \
 	eorl	A,D; \
@@ -151,14 +151,17 @@ chacha20_core:
 	 *   j[4+i] = le32toh(k[i]);
 	 * for (i = 0; i < 4; i++)
 	 *   j[12+i] = le32toh(in[i]);
+	 *
+	 * Chacha explicitly targets little-endian architectures as part of
+	 * its design, so it must be loaded(and stored) with byte swap here.
+	 * How come m68k doesn't have a bswap32-like instruction? :(
 	 */
 
 	movel	%a5,%a6			| %a6 = j (break %fp here)
 
-	| To improve performance, memory access instructions and register
-	| operation instructions should be interleaved though it makes
-	| difficult for humans to read...
-	| And why m68k does not have bswap32 :)
+	| To improve performance, the memory access and register operation
+	| instructions are interleaved, although this makes the code hard
+	| to read...
 	moveq	#4-1,%d7
 LDLOOP:
 	movel	(%a0)+,%d0
@@ -214,9 +217,9 @@ LDLOOP:
 
 #define ROUND	20
 	| %d7 := $xxxxCCRR
-	| CC (high byte) is loop counter and detects carry.
-	| RR (low byte) is rotate counter(12). Note that rotate instructions
-	| only refer the lower 6 bits of rotate register.
+	| CC (high byte) is a loop counter and also detects a carry.
+	| RR (low byte) is a rotate counter(12).  Note that rotate instructions
+	| refer only to the lower 6 bits of the rotate register.
 	movew	#(((256-(ROUND / 2)) << 8) + 12),%d7
 
 	movel	(%sp),%a6		| reload x13
